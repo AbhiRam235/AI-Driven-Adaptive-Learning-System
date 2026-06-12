@@ -1,0 +1,148 @@
+{% extends 'quiz_app/base.html' %}
+{% load static %}
+
+{% block title %}Create Quiz{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <div class="page-header">
+        <h1>➕ Create New Quiz</h1>
+        <p>Select questions and configure your quiz</p>
+    </div>
+
+    <form method="post" class="quiz-form" id="quizForm">
+        {% csrf_token %}
+        
+        <div class="form-section">
+            <h2>Quiz Details</h2>
+            
+            <div class="form-group">
+                <label for="title">Quiz Title *</label>
+                <input type="text" id="title" name="title" class="form-control" required placeholder="e.g., Chapter 1 Review">
+            </div>
+
+            <div class="form-group">
+                <label for="description">Description</label>
+                <textarea id="description" name="description" class="form-control" rows="3" placeholder="Brief description of the quiz"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="duration">Duration (minutes) *</label>
+                <input type="number" id="duration" name="duration" class="form-control" value="30" min="5" max="180" required>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <div class="section-header-flex">
+                <h2>Select Questions</h2>
+                <div class="filter-controls">
+                    <select id="difficultyFilter" class="form-control-sm">
+                        <option value="">All Difficulties</option>
+                        <option value="Easy">Easy</option>
+                        <option value="Medium">Medium</option>
+                        <option value="Hard">Hard</option>
+                    </select>
+                    <select id="documentFilter" class="form-control-sm">
+                        <option value="">All Documents</option>
+                        {% for doc in documents %}
+                        <option value="{{ doc.id }}">{{ doc.title }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="selection-controls">
+                <button type="button" class="btn-sm btn-primary" onclick="selectAll()">Select All</button>
+                <button type="button" class="btn-sm btn-secondary" onclick="deselectAll()">Deselect All</button>
+                <span class="selected-count">Selected: <strong id="selectedCount">0</strong></span>
+            </div>
+
+            <div class="questions-grid" id="questionsGrid">
+                {% for question in questions %}
+                <div class="question-select-card" data-difficulty="{{ question.difficulty }}" data-document="{{ question.document.id }}">
+                    <input type="checkbox" name="questions" value="{{ question.id }}" id="q{{ question.id }}" class="question-checkbox">
+                    <label for="q{{ question.id }}" class="question-select-label">
+                        <div class="question-select-header">
+                            <span class="question-number">Q{{ question.id }}</span>
+                            <div class="question-badges-small">
+                                <span class="badge-sm badge-{{ question.difficulty|lower }}">{{ question.difficulty }}</span>
+                                <span class="badge-sm" style="background: #E0E7FF; color: #5B21B6;">{{ question.bloom_level }}</span>
+                            </div>
+                        </div>
+                        <p class="question-text">{{ question.question|truncatewords:20 }}</p>
+                    </label>
+                </div>
+                {% empty %}
+                <div class="empty-state">
+                    <p>No questions available. Please upload a document first.</p>
+                    <a href="{% url 'upload_document' %}" class="btn btn-primary">Upload Document</a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary" id="createQuizBtn">Create Quiz</button>
+            <a href="{% url 'dashboard' %}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Update selected count
+    function updateSelectedCount() {
+        const count = document.querySelectorAll('.question-checkbox:checked').length;
+        document.getElementById('selectedCount').textContent = count;
+    }
+
+    // Select all
+    function selectAll() {
+        const visibleCheckboxes = document.querySelectorAll('.question-select-card:not([style*="display: none"]) .question-checkbox');
+        visibleCheckboxes.forEach(cb => cb.checked = true);
+        updateSelectedCount();
+    }
+
+    // Deselect all
+    function deselectAll() {
+        document.querySelectorAll('.question-checkbox').forEach(cb => cb.checked = false);
+        updateSelectedCount();
+    }
+
+    // Filter questions
+    function filterQuestions() {
+        const difficultyFilter = document.getElementById('difficultyFilter').value;
+        const documentFilter = document.getElementById('documentFilter').value;
+        const cards = document.querySelectorAll('.question-select-card');
+
+        cards.forEach(card => {
+            const matchesDifficulty = !difficultyFilter || card.dataset.difficulty === difficultyFilter;
+            const matchesDocument = !documentFilter || card.dataset.document === documentFilter;
+            
+            card.style.display = (matchesDifficulty && matchesDocument) ? 'block' : 'none';
+        });
+    }
+
+    // Event listeners
+    document.querySelectorAll('.question-checkbox').forEach(cb => {
+        cb.addEventListener('change', updateSelectedCount);
+    });
+
+    document.getElementById('difficultyFilter').addEventListener('change', filterQuestions);
+    document.getElementById('documentFilter').addEventListener('change', filterQuestions);
+
+    // Form validation
+    document.getElementById('quizForm').addEventListener('submit', function(e) {
+        const selectedCount = document.querySelectorAll('.question-checkbox:checked').length;
+        if (selectedCount === 0) {
+            e.preventDefault();
+            alert('Please select at least one question for the quiz.');
+            return false;
+        }
+    });
+
+    // Initialize
+    updateSelectedCount();
+</script>
+{% endblock %}

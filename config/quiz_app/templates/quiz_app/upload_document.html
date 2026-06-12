@@ -1,0 +1,143 @@
+{% extends 'quiz_app/base.html' %}
+{% load static %}
+
+{% block title %}Upload Document - AI Quiz Generator{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <div class="page-header">
+        <h1>📤 Upload Document</h1>
+        <p>Upload a document to generate AI-powered quiz questions</p>
+    </div>
+
+    <div class="upload-container">
+        <form method="post" enctype="multipart/form-data" class="upload-form">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="title">Document Title</label>
+                <input type="text" id="title" name="title" class="form-control" placeholder="Enter document title (optional)">
+                <small>If not provided, filename will be used</small>
+            </div>
+
+            <div class="form-group">
+                <label for="file">Select Document</label>
+                <div class="file-upload-area" id="fileUploadArea">
+                    <input type="file" id="file" name="file" class="file-input" accept=".pdf,.docx,.txt" required>
+                    <div class="file-upload-placeholder">
+                        <div class="upload-icon">📁</div>
+                        <p>Click to select or drag and drop your document</p>
+                        <small>Supported formats: PDF, DOCX, TXT (Max 10MB)</small>
+                    </div>
+                    <div class="file-preview" id="filePreview" style="display: none;">
+                        <div class="file-icon">📄</div>
+                        <div class="file-info">
+                            <p class="file-name" id="fileName"></p>
+                            <p class="file-size" id="fileSize"></p>
+                        </div>
+                        <button type="button" class="btn-remove" id="removeFile" aria-label="Remove file">×</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="num_questions">Number of Questions to Generate</label>
+                <input type="number" id="num_questions" name="num_questions" class="form-control" value="10" min="5" max="50">
+                <small>Generate between 5-50 questions from your document</small>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary" id="uploadBtn">
+                    <span class="btn-text">Generate Questions</span>
+                    <span class="btn-loading" style="display: none;">
+                        <span class="spinner"></span> Processing...
+                    </span>
+                </button>
+                <a href="{% url 'dashboard' %}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+
+        <div class="info-card">
+            <h3>📋 How It Works</h3>
+            <ol>
+                <li>Upload your study material (PDF, DOCX, or TXT)</li>
+                <li>Our AI extracts key concepts and generates questions</li>
+                <li>Each question includes multiple choice options, difficulty level, and Bloom's taxonomy classification</li>
+                <li>Review and select questions to create custom quizzes</li>
+            </ol>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const fileInput = document.getElementById('file');
+    const fileUploadArea = document.getElementById('fileUploadArea');
+    const filePreview = document.getElementById('filePreview');
+    const fileName = document.getElementById('fileName');
+    const fileSize = document.getElementById('fileSize');
+    const removeFile = document.getElementById('removeFile');
+    const uploadForm = document.querySelector('.upload-form');
+    const uploadBtn = document.getElementById('uploadBtn');
+
+    // File selection handler
+    fileInput.addEventListener('change', function(e) {
+        if (e.target.files.length > 0) {
+            const file = e.target.files[0];
+            displayFilePreview(file);
+        }
+    });
+
+    // Drag and drop
+    fileUploadArea.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        fileUploadArea.classList.add('drag-over');
+    });
+
+    fileUploadArea.addEventListener('dragleave', function() {
+        fileUploadArea.classList.remove('drag-over');
+    });
+
+    fileUploadArea.addEventListener('drop', function(e) {
+        e.preventDefault();
+        fileUploadArea.classList.remove('drag-over');
+        
+        if (e.dataTransfer.files.length > 0) {
+            fileInput.files = e.dataTransfer.files;
+            displayFilePreview(e.dataTransfer.files[0]);
+        }
+    });
+
+    // Display file preview
+    function displayFilePreview(file) {
+        fileName.textContent = file.name;
+        fileSize.textContent = formatFileSize(file.size);
+        document.querySelector('.file-upload-placeholder').style.display = 'none';
+        filePreview.style.display = 'flex';
+    }
+
+    // Remove file
+    removeFile.addEventListener('click', function() {
+        fileInput.value = '';
+        document.querySelector('.file-upload-placeholder').style.display = 'flex';
+        filePreview.style.display = 'none';
+    });
+
+    // Form submission
+    uploadForm.addEventListener('submit', function() {
+        uploadBtn.disabled = true;
+        uploadBtn.querySelector('.btn-text').style.display = 'none';
+        uploadBtn.querySelector('.btn-loading').style.display = 'inline-flex';
+    });
+
+    // Format file size
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+    }
+</script>
+{% endblock %}

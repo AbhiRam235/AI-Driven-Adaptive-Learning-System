@@ -1,0 +1,121 @@
+{% extends 'quiz_app/base.html' %}
+{% load static %}
+
+{% block title %}Dashboard - AI Quiz Generator{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <div class="dashboard-header">
+        <h1>Welcome, {{ user.username }}! 👋</h1>
+        <p>Your learning hub for AI-powered quizzes</p>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon">📄</div>
+            <div class="stat-content">
+                <h3>{{ total_documents }}</h3>
+                <p>Documents Uploaded</p>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon">❓</div>
+            <div class="stat-content">
+                <h3>{{ total_questions }}</h3>
+                <p>Questions Generated</p>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon">📝</div>
+            <div class="stat-content">
+                <h3>{{ total_quizzes }}</h3>
+                <p>Quizzes Created</p>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon">🎯</div>
+            <div class="stat-content">
+                <h3>{{ average_score|floatformat:1 }}%</h3>
+                <p>Average Score</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="dashboard-grid">
+        <div class="dashboard-section">
+            <div class="section-header">
+                <h2>Quick Actions</h2>
+            </div>
+            <div class="action-buttons">
+                <a href="{% url 'upload_document' %}" class="action-btn">
+                    <span class="icon">📤</span>
+                    <span>Upload Document</span>
+                </a>
+                <a href="{% url 'create_quiz' %}" class="action-btn">
+                    <span class="icon">➕</span>
+                    <span>Create Quiz</span>
+                </a>
+                <a href="{% url 'quiz_list' %}" class="action-btn">
+                    <span class="icon">📋</span>
+                    <span>My Quizzes</span>
+                </a>
+                <a href="{% url 'analytics' %}" class="action-btn">
+                    <span class="icon">📊</span>
+                    <span>View Analytics</span>
+                </a>
+            </div>
+        </div>
+
+        <div class="dashboard-section">
+            <div class="section-header">
+                <h2>Recent Documents</h2>
+                <a href="{% url 'upload_document' %}" class="btn-sm btn-primary">View All</a>
+            </div>
+            <div class="recent-list">
+                {% if recent_documents %}
+                    {% for doc in recent_documents %}
+                    <div class="recent-item">
+                        <div class="item-icon">📄</div>
+                        <div class="item-content">
+                            <a href="{% url 'view_questions' doc.id %}">{{ doc.title }}</a>
+                            <small>{{ doc.uploaded_at|date:"M d, Y" }}</small>
+                        </div>
+                        <div class="item-badge {% if doc.processed %}badge-success{% else %}badge-warning{% endif %}">
+                            {% if doc.processed %}Processed{% else %}Processing{% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="empty-state">No documents yet. Upload your first document to get started!</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="dashboard-section">
+            <div class="section-header">
+                <h2>Recent Quizzes</h2>
+                <a href="{% url 'quiz_list' %}" class="btn-sm btn-primary">View All</a>
+            </div>
+            <div class="recent-list">
+                {% if recent_quizzes %}
+                    {% for quiz in recent_quizzes %}
+                    <div class="recent-item">
+                        <div class="item-icon">📝</div>
+                        <div class="item-content">
+                            <a href="{% url 'quiz_detail' quiz.id %}">{{ quiz.title }}</a>
+                            <small>{{ quiz.get_total_questions }} questions · {{ quiz.duration }} min</small>
+                        </div>
+                        <a href="{% url 'take_quiz' quiz.id %}" class="btn-sm btn-primary">Take Quiz</a>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="empty-state">No quizzes yet. Create your first quiz!</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

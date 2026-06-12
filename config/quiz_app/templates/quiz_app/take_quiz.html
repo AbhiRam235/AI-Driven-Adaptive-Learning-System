@@ -1,0 +1,227 @@
+{% extends 'quiz_app/base.html' %}
+{% load static %}
+{% load quiz_filters %}
+
+{% block title %}Take Quiz - {{ quiz.title }}{% endblock %}
+
+{% block content %}
+<div class="quiz-container">
+
+    <div class="quiz-header">
+        <div class="quiz-info">
+            <h1>{{ quiz.title }}</h1>
+            <p>{{ quiz.description }}</p>
+        </div>
+        <div class="quiz-timer">
+            ⏱️ <span id="timeDisplay">{{ quiz.duration }}:00</span>
+        </div>
+    </div>
+
+    <div class="quiz-progress">
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill" style="width:0%"></div>
+        </div>
+        <p>
+            Question <span id="currentQuestion">1</span> of {{ questions_data|length }}
+        </p>
+    </div>
+
+    <div class="quiz-content">
+
+        {% for item in questions_data %}
+        <div class="quiz-question"
+             id="question{{ forloop.counter }}"
+             {% if forloop.counter > 1 %}style="display:none;"{% endif %}>
+
+            <div class="question-badges">
+                <span class="badge badge-{{ item.question.difficulty|lower }}">
+                    {{ item.question.difficulty }}
+                </span>
+                <span class="badge">{{ item.question.bloom_level }}</span>
+            </div>
+
+            <h2>{{ item.question.question }}</h2>
+
+            <div class="options-container">
+
+                {% for option in item.options %}
+                <div class="quiz-option"
+                     onclick="selectOption(this, {{ item.question.id }}, {{ forloop.counter }})">
+
+                    <input type="radio"
+                           name="question{{ item.question.id }}"
+                           value="{{ forloop.counter }}"
+                           id="q{{ item.question.id }}opt{{ forloop.counter }}">
+
+                    <label for="q{{ item.question.id }}opt{{ forloop.counter }}">
+                        <strong>{{ forloop.counter|get_letter }}.</strong>
+                        {{ option }}
+                    </label>
+                </div>
+                {% endfor %}
+
+            </div>
+
+            <div class="quiz-navigation">
+
+                {% if forloop.counter > 1 %}
+                <button onclick="previousQuestion({{ forloop.counter }})">
+                    ← Previous
+                </button>
+                {% endif %}
+
+                {% if forloop.counter < questions_data|length %}
+                <button onclick="nextQuestion({{ forloop.counter }}, {{ item.question.id }})">
+                    Next →
+                </button>
+                {% else %}
+                <button onclick="submitQuiz()">
+                    Submit Quiz
+                </button>
+                {% endif %}
+
+            </div>
+        </div>
+        {% endfor %}
+
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+
+const attemptId = {{ attempt.id|default:0 }};
+const totalQuestions = {{ questions_data|length|default:0 }};
+const duration = {{ quiz.duration|default:0 }};
+
+let currentQuestionNum = 1;
+let answers = {};
+let timeRemaining = duration * 60;
+let quizSubmitting = false;
+
+/* ---------------- CSRF ---------------- */
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie) {
+        document.cookie.split(';').forEach(cookie => {
+            cookie = cookie.trim();
+            if (cookie.startsWith(name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+            }
+        });
+    }
+    return cookieValue;
+}
+
+/* ---------------- Timer ---------------- */
+function startTimer() {
+    const timerInterval = setInterval(() => {
+
+        if (quizSubmitting) {
+            clearInterval(timerInterval);
+            return;
+        }
+
+        timeRemaining--;
+
+        const minutes = Math.floor(timeRemaining / 60);
+        const seconds = timeRemaining % 60;
+
+        document.getElementById("timeDisplay").textContent =
+            `${minutes}:${seconds.toString().padStart(2, "0")}`;
+
+        if (timeRemaining <= 0) {
+            clearInterval(timerInterval);
+            alert("⏰ Time is up! Submitting quiz...");
+            submitQuiz();
+        }
+
+    }, 1000);
+}
+
+/* ---------------- Select Option ---------------- */
+function selectOption(element, questionId, optionIndex) {
+
+    const container = element.closest(".options-container");
+
+    container.querySelectorAll(".quiz-option").forEach(opt => {
+        opt.classList.remove("selected");
+    });
+
+    element.classList.add("selected");
+
+    const radio = element.querySelector("input[type='radio']");
+    if (radio) radio.checked = true;
+
+    // ✅ store selected INDEX (important for backend)
+    answers[questionId] = optionIndex;
+}
+
+/* ---------------- Navigation ---------------- */
+function nextQuestion(current, questionId) {
+
+    if (!answers[questionId]) {
+        if (!confirm("No answer selected. Continue?")) return;
+    }
+
+    document.getElementById(`question${current}`).style.display = "none";
+    document.getElementById(`question${current + 1}`).style.display = "block";
+
+    currentQuestionNum = current + 1;
+    updateProgress();
+}
+
+function previousQuestion(current) {
+
+    document.getElementById(`question${current}`).style.display = "none";
+    document.getElementById(`question${current - 1}`).style.display = "block";
+
+    currentQuestionNum = current - 1;
+    updateProgress();
+}
+
+function updateProgress() {
+    const progress = (currentQuestionNum / totalQuestions) * 100;
+    document.getElementById("progressFill").style.width = `${progress}%`;
+    document.getElementById("currentQuestion").textContent = currentQuestionNum;
+}
+
+/* ---------------- Submit Quiz ---------------- */
+async function submitQuiz() {
+
+    if (quizSubmitting) return;
+
+    quizSubmitting = true;
+
+    try {
+        const response = await fetch(
+            "{% url 'complete_quiz' attempt.id %}",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCookie("csrftoken")
+                },
+                body: JSON.stringify({
+                    answers: answers
+                })
+            }
+        );
+
+        if (response.redirected) {
+            window.location.href = response.url;
+        }
+
+    } catch (error) {
+        console.error("Submit error:", error);
+        quizSubmitting = false;
+    }
+}
+
+/* ---------------- Init ---------------- */
+startTimer();
+updateProgress();
+
+</script>
+{% endblock %}

@@ -1,0 +1,90 @@
+{% extends 'quiz_app/base.html' %}
+{% load static %}
+
+{% block title %}Questions - {{ document.title }}{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <div class="page-header">
+        <h1>❓ Generated Questions</h1>
+        <p>Document: {{ document.title }}</p>
+    </div>
+
+    <div class="questions-container">
+        <div class="questions-header">
+            <div class="questions-stats">
+                <span class="badge">{{ total_count }} Questions</span>
+                <span class="badge badge-easy">{{ easy_count }} Easy</span>
+                <span class="badge badge-medium">{{ medium_count }} Medium</span>
+                <span class="badge badge-hard">{{ hard_count }} Hard</span>
+            </div>
+
+            <a href="{% url 'create_quiz' %}" class="btn btn-primary">
+                Create Quiz from These Questions
+            </a>
+        </div>
+
+        <div class="questions-list">
+            {% for question in questions %}
+            <div class="question-card">
+                <div class="question-header">
+                    <span class="question-number">
+                        Q{{ forloop.counter }}
+                    </span>
+
+                    <div class="question-badges">
+                        <span class="badge badge-difficulty-{{ question.difficulty|lower }}">
+                            {{ question.difficulty }}
+                        </span>
+                        <span class="badge badge-bloom">
+                            {{ question.bloom_level }}
+                        </span>
+                    </div>
+                </div>
+
+                <div class="question-content">
+                    <h3>{{ question.question }}</h3>
+                </div>
+
+                <div class="question-options">
+                    <div class="option">
+                        <span class="option-icon">○</span>
+                        <span>{{ question.correct_answer }}</span>
+                    </div>
+
+                    <div class="option">
+                        <span class="option-icon">○</span>
+                        <span>{{ question.distractor_1 }}</span>
+                    </div>
+
+                    <div class="option">
+                        <span class="option-icon">○</span>
+                        <span>{{ question.distractor_2 }}</span>
+                    </div>
+
+                    <div class="option">
+                        <span class="option-icon">○</span>
+                        <span>{{ question.distractor_3 }}</span>
+                    </div>
+                </div>
+
+                <div class="question-context">
+                    <details>
+                        <summary>View Context</summary>
+                        <p>{{ question.context|truncatewords:50 }}</p>
+                    </details>
+                </div>
+            </div>
+
+            {% empty %}
+            <div class="empty-state">
+                <p>No questions found for this document.</p>
+                <a href="{% url 'upload_document' %}" class="btn btn-primary">
+                    Upload Another Document
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

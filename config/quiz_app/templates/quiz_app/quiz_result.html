@@ -1,0 +1,250 @@
+{% extends 'quiz_app/base.html' %}
+{% load static %}
+
+{% block title %}Quiz Results{% endblock %}
+
+{% block content %}
+<div class="results-container">
+    <div class="results-header">
+        <h1>🎯 Quiz Completed!</h1>
+        <p>{{ attempt.quiz.title }}</p>
+    </div>
+
+    <div class="score-display">
+        <div class="score-circle {% if attempt.score >= 70 %}score-pass{% elif attempt.score >= 50 %}score-average{% else %}score-fail{% endif %}">
+            <div class="score-number">{{ attempt.score|floatformat:1 }}%</div>
+            <div class="score-label">Your Score</div>
+        </div>
+        
+        <div class="score-details">
+            <div class="score-stat">
+                <h3>{{ correct_answers }}</h3>
+                <p>Correct</p>
+            </div>
+            <div class="score-stat">
+                <h3>{{ total_questions|add:"-"|add:correct_answers|stringformat:"d" }}</h3>
+                <p>Incorrect</p>
+            </div>
+            <div class="score-stat">
+                <h3>{{ total_questions }}</h3>
+                <p>Total</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="answers-review">
+        <h2>Review Your Answers</h2>
+        
+        {% for answer in answers %}
+        <div class="answer-card {% if answer.is_correct %}answer-correct{% else %}answer-incorrect{% endif %}">
+            <div class="answer-header">
+                <span class="question-number">Question {{ forloop.counter }}</span>
+                <span class="answer-badge">
+                    {% if answer.is_correct %}✓ Correct{% else %}✗ Incorrect{% endif %}
+                </span>
+            </div>
+            
+            <h3>{{ answer.question.question }}</h3>
+            
+            <div class="answer-options">
+                <div class="answer-item your-answer">
+                    <strong>Your Answer:</strong> {{ answer.selected_answer }}
+                </div>
+                {% if not answer.is_correct %}
+                <div class="answer-item correct-answer">
+                    <strong>Correct Answer:</strong> {{ answer.question.correct_answer }}
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="answer-meta">
+                <span class="badge badge-{{ answer.question.difficulty|lower }}">{{ answer.question.difficulty }}</span>
+                <span class="badge">{{ answer.question.bloom_level }}</span>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="results-actions">
+        <a href="{% url 'take_quiz' attempt.quiz.id %}" class="btn btn-primary">Retake Quiz</a>
+        <a href="{% url 'quiz_list' %}" class="btn btn-secondary">Back to Quizzes</a>
+        <a href="{% url 'analytics' %}" class="btn btn-secondary">View Analytics</a>
+    </div>
+</div>
+
+<style>
+.results-container {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.results-header {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.results-header h1 {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.score-display {
+    background: var(--card-background);
+    padding: 2rem;
+    border-radius: 1rem;
+    box-shadow: var(--shadow);
+    margin-bottom: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 3rem;
+    justify-content: center;
+}
+
+.score-circle {
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: 8px solid;
+}
+
+.score-pass {
+    border-color: var(--secondary-color);
+    background: rgba(16, 185, 129, 0.1);
+}
+
+.score-average {
+    border-color: var(--warning-color);
+    background: rgba(245, 158, 11, 0.1);
+}
+
+.score-fail {
+    border-color: var(--danger-color);
+    background: rgba(239, 68, 68, 0.1);
+}
+
+.score-number {
+    font-size: 3rem;
+    font-weight: bold;
+}
+
+.score-label {
+    font-size: 1.1rem;
+    color: var(--text-secondary);
+}
+
+.score-details {
+    display: flex;
+    gap: 2rem;
+}
+
+.score-stat {
+    text-align: center;
+}
+
+.score-stat h3 {
+    font-size: 2rem;
+    color: var(--primary-color);
+    margin-bottom: 0.25rem;
+}
+
+.score-stat p {
+    color: var(--text-secondary);
+}
+
+.answers-review {
+    margin-bottom: 2rem;
+}
+
+.answers-review h2 {
+    margin-bottom: 1.5rem;
+}
+
+.answer-card {
+    background: var(--card-background);
+    padding: 1.5rem;
+    border-radius: 1rem;
+    box-shadow: var(--shadow);
+    margin-bottom: 1.5rem;
+    border-left: 4px solid;
+}
+
+.answer-correct {
+    border-color: var(--secondary-color);
+}
+
+.answer-incorrect {
+    border-color: var(--danger-color);
+}
+
+.answer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.answer-badge {
+    padding: 0.5rem 1rem;
+    border-radius: 1rem;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.answer-correct .answer-badge {
+    background: #D1FAE5;
+    color: #065F46;
+}
+
+.answer-incorrect .answer-badge {
+    background: #FEE2E2;
+    color: #991B1B;
+}
+
+.answer-card h3 {
+    margin-bottom: 1rem;
+}
+
+.answer-options {
+    background: var(--background);
+    padding: 1rem;
+    border-radius: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.answer-item {
+    padding: 0.5rem 0;
+}
+
+.your-answer {
+    color: var(--text-primary);
+}
+
+.correct-answer {
+    color: var(--secondary-color);
+    border-top: 1px solid var(--border-color);
+    padding-top: 1rem;
+    margin-top: 1rem;
+}
+
+.answer-meta {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.results-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+}
+
+@media (max-width: 768px) {
+    .score-display {
+        flex-direction: column;
+    }
+}
+</style>
+{% endblock %}

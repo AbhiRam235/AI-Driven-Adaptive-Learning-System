@@ -1,0 +1,92 @@
+{% extends 'quiz_app/base.html' %}
+{% load static %}
+
+{% block title %}My Quizzes{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <div class="page-header">
+        <h1>📝 My Quizzes</h1>
+        <a href="{% url 'create_quiz' %}" class="btn btn-primary">Create New Quiz</a>
+    </div>
+
+    <div class="quizzes-grid">
+        {% for quiz in quizzes %}
+        <div class="quiz-card">
+            <div class="quiz-card-header">
+                <h3>{{ quiz.title }}</h3>
+                <span class="badge">{{ quiz.get_total_questions }} questions</span>
+            </div>
+            
+            <p class="quiz-description">{{ quiz.description|default:"No description" }}</p>
+            
+            <div class="quiz-meta">
+                <span>⏱️ {{ quiz.duration }} minutes</span>
+                <span>📅 {{ quiz.created_at|date:"M d, Y" }}</span>
+            </div>
+            
+            <div class="quiz-actions">
+                <a href="{% url 'take_quiz' quiz.id %}" class="btn btn-primary btn-sm">Take Quiz</a>
+                <a href="{% url 'quiz_detail' quiz.id %}" class="btn btn-secondary btn-sm">View Details</a>
+            </div>
+        </div>
+        {% empty %}
+        <div class="empty-state">
+            <p>No quizzes yet. Create your first quiz!</p>
+            <a href="{% url 'create_quiz' %}" class="btn btn-primary">Create Quiz</a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+.quizzes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.quiz-card {
+    background: var(--card-background);
+    padding: 1.5rem;
+    border-radius: 1rem;
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+}
+
+.quiz-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+}
+
+.quiz-card-header h3 {
+    font-size: 1.2rem;
+    flex: 1;
+}
+
+.quiz-description {
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+    flex: 1;
+}
+
+.quiz-meta {
+    display: flex;
+    gap: 1rem;
+    padding: 1rem 0;
+    border-top: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.quiz-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+</style>
+{% endblock %}

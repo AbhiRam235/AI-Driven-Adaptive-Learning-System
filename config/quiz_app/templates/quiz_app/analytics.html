@@ -1,0 +1,149 @@
+{% extends "quiz_app/base.html" %}
+{% block content %}
+{% load quiz_filters %}
+
+<h2>📊 Quiz Analytics</h2>
+
+<!-- ========================= -->
+<!-- 🧠 SM-2 SMART REVIEW -->
+<!-- ========================= -->
+
+<h2>🧠 Smart Review (SM-2)</h2>
+
+{% if due_questions %}
+    <div style="border:1px solid #ddd; padding:15px; margin-bottom:20px; border-radius:8px;">
+
+        <h3>📌 Questions Due for Review</h3>
+
+        <table border="1" cellpadding="8" style="width:100%; border-collapse:collapse;">
+            <tr style="background:#f5f5f5;">
+                <th>Question</th>
+                <th>Repetition</th>
+                <th>Interval (days)</th>
+                <th>Ease Factor</th>
+                <th>Next Review</th>
+            </tr>
+
+            {% for qp in due_questions %}
+            <tr>
+                <td>{{ qp.question.question|truncatechars:60 }}</td>
+                <td>{{ qp.repetition }}</td>
+                <td>{{ qp.interval }}</td>
+                <td>{{ qp.ef|floatformat:2 }}</td>
+                <td>{{ qp.next_review|date:"d M Y H:i" }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+
+    </div>
+{% else %}
+    <p>✅ No questions due. You're on track!</p>
+{% endif %}
+
+<hr>
+
+<!-- ========================= -->
+<!-- QUIZ SELECTION -->
+<!-- ========================= -->
+
+<form method="get">
+    <label><strong>Select Quiz:</strong></label>
+    <select name="quiz" onchange="this.form.submit()">
+        {% for quiz in quizzes %}
+            <option value="{{ quiz.id }}"
+                {% if selected_quiz and quiz.id == selected_quiz.id %}
+                    selected
+                {% endif %}
+            >
+                {{ quiz.title }}
+            </option>
+        {% endfor %}
+    </select>
+</form>
+
+<hr>
+
+<!-- ========================= -->
+<!-- ATTEMPT ANALYTICS -->
+<!-- ========================= -->
+
+{% if attempt_analytics %}
+
+    {% for data in attempt_analytics %}
+
+        <div style="border:1px solid #ccc; padding:15px; margin-bottom:20px; border-radius:8px;">
+            
+            <h3>
+                Attempt on {{ data.attempt.completed_at|date:"d M Y H:i" }}
+            </h3>
+
+            <!-- 🔥 NEW -->
+            <p><strong>Prior Knowledge:</strong> {{ data.prior }}</p>
+
+            <p><strong>Overall Mastery:</strong> {{ data.overall_mastery }}%</p>
+            <p><strong>Score:</strong> {{ data.raw_score }}</p>
+
+            <!-- Difficulty -->
+            <h4>🎯 Difficulty Mastery</h4>
+            <ul>
+              {% for level, value in data.difficulty.items %}
+                  <li>
+                      {{ level }} :
+                      {{ value|floatformat:2 }}
+                      ({{ data.feedback|get_item:level }})
+                  </li>
+              {% endfor %}
+            </ul>
+
+            <!-- Bloom -->
+            <h4>🧠 Bloom Mastery</h4>
+            <ul>
+                {% for level, value in data.bloom.items %}
+                    <li>{{ level }} : {{ value|floatformat:2 }}</li>
+                {% endfor %}
+            </ul>
+
+        </div>
+
+    {% endfor %}
+
+    <!-- ========================= -->
+    <!-- 📈 COMPARISON GRAPH -->
+    <!-- ========================= -->
+
+    {% if trend_mastery|length > 1 %}
+
+        <h3>📈 Comparison (Last Two Attempts)</h3>
+        <canvas id="comparisonChart"></canvas>
+
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script>
+            const ctx = document.getElementById('comparisonChart');
+
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: {{ trend_labels|safe }},
+                    datasets: [
+                        {
+                            label: 'Mastery (%)',
+                            data: {{ trend_mastery|safe }},
+                            borderWidth: 2
+                        },
+                        {
+                            label: 'Score',
+                            data: {{ trend_score|safe }},
+                            borderWidth: 2
+                        }
+                    ]
+                }
+            });
+        </script>
+
+    {% endif %}
+
+{% else %}
+    <p>No attempts available.</p>
+{% endif %}
+
+{% endblock %}
