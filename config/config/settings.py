@@ -12,7 +12,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 import os
 from pathlib import Path
 from decouple import config
-
+from dotenv import load_dotenv
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -121,6 +121,8 @@ LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'dashboard'
 LOGOUT_REDIRECT_URL = 'login'
 
-# AI Model Configuration
-GEMINI_API_KEY = "AIzaSyCYc8lpxVkleSySkZjC9GgmcVs6xfa7-5U"
-HF_MODEL = "mrm8488/t5-base-finetuned-question-generation-ap"
+load_dotenv()
+
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+HF_MODEL = os.getenv("HF_MODEL")
+
